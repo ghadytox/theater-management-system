@@ -45,6 +45,8 @@ export const initialShows = [
   },
 ];
 
+// Generates a seating grid: 5 rows (A-E) x 8 seats = 40 seats per show
+// 25% of seats are randomly pre-booked to simulate real occupancy
 export const generateSeats = (showId) => {
   const rows = ['A', 'B', 'C', 'D', 'E'];
   return rows.flatMap((row) =>

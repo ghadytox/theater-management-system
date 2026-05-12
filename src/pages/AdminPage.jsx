@@ -9,6 +9,7 @@ export default function AdminPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState(empty);
   const [saved, setSaved] = useState(false);
+  const [preview, setPreview] = useState('');
 
   if (state.currentUser.role !== 'admin') {
     return (
@@ -24,11 +25,20 @@ export default function AdminPage() {
     e.preventDefault();
     dispatch({ type: 'ADD_SHOW', show: { ...form, price: Number(form.price) } });
     setForm(empty);
+    setPreview('');
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
 
   const set = (field) => (e) => setForm({ ...form, [field]: e.target.value });
+
+  const handleImage = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setPreview(url);
+    setForm({ ...form, image: url });
+  };
 
   return (
     <div className="container py-5">
@@ -40,12 +50,17 @@ export default function AdminPage() {
             <h5 className="mb-3">Add New Show</h5>
             {saved && <div className="alert alert-success py-2">Show added!</div>}
             <form onSubmit={handleAdd}>
-              {[['title', 'Title'], ['venue', 'Venue'], ['image', 'Image URL']].map(([f, l]) => (
+              {[['title', 'Title'], ['venue', 'Venue']].map(([f, l]) => (
                 <div className="mb-2" key={f}>
                   <label className="form-label small">{l}</label>
                   <input className="form-control form-control-sm" required value={form[f]} onChange={set(f)} />
                 </div>
               ))}
+              <div className="mb-2">
+                <label className="form-label small">Show Image</label>
+                <input type="file" accept="image/*" className="form-control form-control-sm" onChange={handleImage} />
+                {preview && <img src={preview} alt="preview" className="mt-2 rounded" style={{ width: '100%', height: 120, objectFit: 'cover' }} />}
+              </div>
               <div className="mb-2">
                 <label className="form-label small">Genre</label>
                 <select className="form-select form-select-sm" value={form.genre} onChange={set('genre')}>

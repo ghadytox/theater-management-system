@@ -1,3 +1,6 @@
+// Observer Pattern implementation:
+// AppContext acts as the Subject. Every component that calls useApp()
+// is an Observer — they automatically re-render when state changes.
 import { createContext, useContext, useReducer } from 'react';
 import { initialShows, generateSeats } from '../data/mockData';
 
@@ -10,9 +13,11 @@ const initialState = {
   currentUser: { id: 1, name: 'Guest', role: 'customer' },
 };
 
+// Pure reducer function — handles all state transitions predictably
 function reducer(state, action) {
   switch (action.type) {
     case 'LOAD_SEATS': {
+      // Avoid regenerating seats if already loaded for this show
       if (state.seats[action.showId]) return state;
       return { ...state, seats: { ...state.seats, [action.showId]: generateSeats(action.showId) } };
     }
@@ -21,6 +26,7 @@ function reducer(state, action) {
       const alreadyBooked = state.bookings.find(
         (b) => b.showId === showId && b.seatId === seatId
       );
+      // Prevent double-booking the same seat
       if (alreadyBooked) return state;
       const updatedSeats = state.seats[showId].map((s) =>
         s.id === seatId ? { ...s, status: 'booked' } : s
