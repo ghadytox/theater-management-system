@@ -10,7 +10,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/seats")
 @RequiredArgsConstructor
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"})
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000", "http://host.docker.internal:3000"})
 public class SeatController {
 
     private final SeatRepository seatRepository;
