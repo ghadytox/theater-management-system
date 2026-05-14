@@ -16,4 +16,7 @@ public class Booking {
     private String customerEmail;
     private String status = "confirmed";
     private LocalDateTime bookedAt = LocalDateTime.now();
+    private String paymentMethod = "MTN MoMo";
+    private String mtnNumber;
+    private String paymentStatus = "paid";
 }
