@@ -1,55 +1,40 @@
-// Observer Pattern implementation:
-// AppContext acts as the Subject. Every component that calls useApp()
-// is an Observer — they automatically re-render when state changes.
-import { createContext, useContext, useReducer } from 'react';
-import { initialShows, generateSeats } from '../data/mockData';
+// Observer Pattern: AppContext is the Subject, all consuming components are Observers
+import { createContext, useContext, useReducer, useEffect } from 'react';
+import { getShows, getBookings } from '../services/api';
 
 const AppContext = createContext(null);
 
 const initialState = {
-  shows: initialShows,
-  seats: {},       // { [showId]: seat[] }
+  shows: [],
+  seats: {},
   bookings: [],
   currentUser: { id: 1, name: 'Guest', role: 'customer' },
+  loading: true,
 };
 
-// Pure reducer function — handles all state transitions predictably
 function reducer(state, action) {
   switch (action.type) {
-    case 'LOAD_SEATS': {
-      // Avoid regenerating seats if already loaded for this show
-      if (state.seats[action.showId]) return state;
-      return { ...state, seats: { ...state.seats, [action.showId]: generateSeats(action.showId) } };
-    }
-    case 'BOOK_SEAT': {
-      const { showId, seatId, customerName, customerEmail } = action;
-      const alreadyBooked = state.bookings.find(
-        (b) => b.showId === showId && b.seatId === seatId
-      );
-      // Prevent double-booking the same seat
-      if (alreadyBooked) return state;
-      const updatedSeats = state.seats[showId].map((s) =>
-        s.id === seatId ? { ...s, status: 'booked' } : s
-      );
-      const booking = {
-        id: Date.now(),
-        showId,
-        seatId,
-        customerName,
-        customerEmail,
-        status: 'confirmed',
-        bookedAt: new Date().toISOString(),
-      };
-      return {
-        ...state,
-        seats: { ...state.seats, [showId]: updatedSeats },
-        bookings: [...state.bookings, booking],
-      };
-    }
+    case 'SET_SHOWS':
+      return { ...state, shows: action.shows, loading: false };
+    case 'SET_BOOKINGS':
+      return { ...state, bookings: action.bookings };
+    case 'SET_SEATS':
+      return { ...state, seats: { ...state.seats, [action.showId]: action.seats } };
     case 'ADD_SHOW':
-      return { ...state, shows: [...state.shows, { ...action.show, id: Date.now() }] };
+      return { ...state, shows: [...state.shows, action.show] };
     case 'DELETE_SHOW':
       return { ...state, shows: state.shows.filter((s) => s.id !== action.id) };
+    case 'BOOK_SEAT': {
+      // Update seat status locally after successful API call
+      const updatedSeats = (state.seats[action.showId] || []).map((s) =>
+        s.id === action.seatId ? { ...s, status: 'booked' } : s
+      );
+      return {
+        ...state,
+        seats: { ...state.seats, [action.showId]: updatedSeats },
+        bookings: [...state.bookings, action.booking],
+      };
+    }
     case 'SET_USER':
       return { ...state, currentUser: action.user };
     default:
@@ -59,6 +44,13 @@ function reducer(state, action) {
 
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+
+  // Load shows and bookings from backend on startup
+  useEffect(() => {
+    getShows().then((res) => dispatch({ type: 'SET_SHOWS', shows: res.data }));
+    getBookings().then((res) => dispatch({ type: 'SET_BOOKINGS', bookings: res.data }));
+  }, []);
+
   return <AppContext.Provider value={{ state, dispatch }}>{children}</AppContext.Provider>;
 }
 

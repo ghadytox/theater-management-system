@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
+import { createShow, deleteShow } from '../services/api';
 
 const empty = { title: '', genre: 'Drama', date: '', time: '', venue: '', price: '', description: '', image: '' };
 
@@ -21,13 +22,19 @@ export default function AdminPage() {
     );
   }
 
-  const handleAdd = (e) => {
+  const handleAdd = async (e) => {
     e.preventDefault();
-    dispatch({ type: 'ADD_SHOW', show: { ...form, price: Number(form.price) } });
+    const res = await createShow({ ...form, price: Number(form.price) });
+    dispatch({ type: 'ADD_SHOW', show: res.data });
     setForm(empty);
     setPreview('');
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleDelete = async (id) => {
+    await deleteShow(id);
+    dispatch({ type: 'DELETE_SHOW', id });
   };
 
   const set = (field) => (e) => setForm({ ...form, [field]: e.target.value });
@@ -44,7 +51,6 @@ export default function AdminPage() {
     <div className="container py-5">
       <h2 className="mb-4">Admin Panel</h2>
       <div className="row g-4">
-        {/* Add Show Form */}
         <div className="col-md-5">
           <div className="card p-4 shadow-sm">
             <h5 className="mb-3">Add New Show</h5>
@@ -93,7 +99,6 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Shows Table */}
         <div className="col-md-7">
           <h5>Manage Shows ({state.shows.length})</h5>
           <div className="table-responsive">
@@ -109,10 +114,7 @@ export default function AdminPage() {
                     <td>{s.venue}</td>
                     <td>${s.price}</td>
                     <td>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => dispatch({ type: 'DELETE_SHOW', id: s.id })}
-                      >Delete</button>
+                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(s.id)}>Delete</button>
                     </td>
                   </tr>
                 ))}
@@ -120,7 +122,6 @@ export default function AdminPage() {
             </table>
           </div>
 
-          {/* Bookings Summary */}
           <h5 className="mt-4">All Bookings ({state.bookings.length})</h5>
           {state.bookings.length === 0 ? (
             <p className="text-muted small">No bookings yet.</p>
@@ -137,7 +138,7 @@ export default function AdminPage() {
                       <tr key={b.id}>
                         <td>{b.customerName}</td>
                         <td>{show?.title}</td>
-                        <td>{b.seatId.split('-')[1]}</td>
+                        <td>{b.seatId?.split('-')[1]}</td>
                         <td><span className="badge bg-success">{b.status}</span></td>
                       </tr>
                     );
